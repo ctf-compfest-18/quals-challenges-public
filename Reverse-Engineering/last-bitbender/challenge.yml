@@ -1,0 +1,83 @@
+# This file represents the base specification of your challenge. It is used by
+# other tools to install and deploy your challenge.
+
+# Required sections
+name: "The Last Bitbender"
+author: "yrNeh22"
+
+# Select a category from:
+# - Binary Exploitation
+# - Web Exploitation
+# - OSINT
+# - Cryptography
+# - Digital Forensics
+# - Reverse Engineering
+# - Miscellaneous
+category: Reverse Engineering
+
+# This is the challenge description. Make sure you include the
+# necessary URLs / netcat strings here.
+# Constants:
+# {{ IP_SERVER }} to get service IP address
+# {{ PORT }} to get service port
+# remove {{ IP_SERVER }} and {{ PORT }}  if the challenge is a container category
+description: "who knew Aang could bend bits too?"
+
+# Flags specify answers that your challenge use. You should generally provide
+# at least one.
+# Can be removed if unused
+# Accepts strings or dictionaries
+flags:
+  - COMPFEST18{0nly_th3_av4t4r_m4st3r3d_4ll_th3m_b1ts_<ran_16>}
+
+# Tags are used to classify your challenge with topics. You should provide at
+# least one.
+# Can be removed if unused
+# Accepts strings
+# tags:
+#   - windows
+
+# Hints are used to give players a way to buy or have suggestions. They are not
+# required but can be nice.
+# Default value: cost = 0, state = "visible"
+# Can be removed if unused
+# Accepts dictionaries
+# hints:
+#   - { content: "Not published hint", cost: 0, state: "hidden" }
+
+##############
+#  BAGIAN TC #
+##############
+
+# This is the number of points awarded for the challenge.
+value: 500
+type: container # dynamic, static, or container
+
+# Number of solves it takes to reach the minimum value.
+decay: 20
+
+decay-function: logarithmic # logarithmic or linear 
+
+# Minimum value.
+minimum: 100
+
+# Provide paths to files from the same directory that this file is in
+# Accepts strings
+files:
+  - dist/chall.exe
+
+# The state of the challenge.
+# May be "visible" or "hidden".
+# It is "visible" by default.
+state: hidden
+
+# The ports to expose. The target port will be used to access the deployed container. for container challenges, remove target port and container port = internal port
+expose:
+  containerPort: 36769
+
+# only for container challenges, remove for other type of challenges
+
+image: ghcr.io/ctf-compfest-18/last-bitbender:latest # docker image for the challenge
+connection: tcp # http or tcp
+scoring-type: dynamic # standard or dynamic, if dynamic follow the parameters above (value, decay, decay function, minimum value)
+alive-time: 10 # container alive time,

@@ -1,0 +1,31 @@
+name: "Compfest Coin"
+author: "XymboL"
+category: "Blockchain"
+
+description: |
+  ALL IN SEMESTA BOSKU, CACING-CACING NAGA-NAGA.
+
+  Starter tooling:
+  - https://docs.sui.io/guides/developer/getting-started
+  - [@mysten/sui](https://www.npmjs.com/package/@mysten/sui) TypeScript SDK
+  - Sui CLI cannot be used because of gRPC
+
+flags:
+  - COMPFEST18{Izin_Pamit_dari_Dunia_Crypto_Hari_ini_mungkin_adalah_hari_paling_berat_buat_saya_Tangan_gemetar_saat_menulis_ini_dada_sesak_kepala_penuh_pikiran_Dunia_crypto_benar_benar_ngga_kenal_ampun_Saya_sudah_berjuang_sejauh_ini_berharap_ada_cahaya_di_ujung_grafik_merah_itu_Tapi_kenyataannya_Crypto_itu_sadis_kejam_Kadang_bukan_hanya_menguras_saldo_tapi_juga_hati_dan_semangat_Buat_teman_teman_yang_belum_terjun_dengarkan_baik_baik_Jangan_gegabah_Dunia_ini_bukan_tempat_untuk_asal_coba_Belajarlah_dulu_pahami_risikonya_dan_jangan_pernah_taruh_lebih_dari_yang_sanggup_kamu_relakan_Saya_mohon_maaf_kalau_selama_ini_ada_kata_kata_saya_yang_menyinggung_siapa_pun_di_sini_Tidak_pernah_ada_niat_buruk_hanya_emosi_dari_seseorang_yang_terlalu_lama_bertahan_dalam_badai_Dan_sekarang_saya_menyerah_Saya_ingin_istirahat_Kalian_yang_masih_kuat_lanjutkan_perjuangan_kalian_Tapi_bagi_yang_juga_merasa_hancur_mungkin_sudah_saatnya_kita_CL_bersama_Alt_season_sudah_benar_benar_berakhir_Terima_kasih_untuk_semua_cerita_tawa_dan_luka_yang_pernah_kita_bagi_di_sini_Sampai_jumpa_di_kehidupan_berikutnya_bukan_sebagai_trader_tapi_sebagai_manusia_yang_sudah_belajar}
+
+value: 500
+type: dynamic
+decay: 20
+decay-function: logarithmic
+minimum: 100
+
+files:
+  - public
+
+state: hidden
+
+connection_info: "http://{{ IP_SERVER }}:{{ PORT }}/"
+
+expose:
+  containerPort: 8080
+  targetPort: 8501

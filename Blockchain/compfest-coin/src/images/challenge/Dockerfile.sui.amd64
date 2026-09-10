@@ -1,0 +1,39 @@
+FROM ubuntu:24.04
+
+ARG TARGETARCH=amd64
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       curl ca-certificates git python3 python3-pip tini build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --shell /bin/bash -m ctf \
+    && mkdir -p /root/.sui/sui_config /var/log/ctf /startup \
+    && echo '[]' > /root/.sui/sui_config/sui.keystore
+
+COPY suiconfig.minimal.yaml /root/.sui/sui_config/client.yaml
+
+RUN set -eux; \
+    arch="${TARGETARCH:-amd64}"; \
+    case "${arch}" in \
+      amd64|x86_64) sui_arch="x86_64" ;; \
+      arm64|aarch64) sui_arch="aarch64" ;; \
+      *) echo "unsupported TARGETARCH=${arch}" >&2; exit 1 ;; \
+    esac; \
+    curl -L "https://github.com/MystenLabs/sui/releases/download/mainnet-v1.72.2/sui-mainnet-v1.72.2-ubuntu-${sui_arch}.tgz" \
+    | tar -xz -C /usr/local/bin --strip-components=1 ./sui \
+        ./sui-faucet ./sui-node ./sui-tool
+
+ENV PYTHONPATH=/usr/lib/python
+ENV BLOCKCHAIN_TYPE=sui
+
+COPY entrypoint.sh /entrypoint.sh
+COPY requirements.txt /root/requirements.txt
+RUN chmod +x /entrypoint.sh \
+    && python3 -m pip install --no-cache-dir -r /root/requirements.txt --break-system-packages
+
+COPY 95-start-sui-shared /startup/
+COPY 96-start-launcher /startup/
+COPY src/sandbox /usr/lib/python/sandbox
+
+ENTRYPOINT ["tini", "-g", "--"]
+CMD ["bash", "/entrypoint.sh"]

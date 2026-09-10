@@ -1,0 +1,32 @@
+name: NACREVAULT
+author: racoonhunter
+
+category: Cryptography
+
+description: |
+  A ternary state was used to seal the vault.
+  Recover it from the attached transcript.
+
+  Flag format:
+  COMPFEST18{64 lowercase hexadecimal characters + `_` + sha256(that 64 lowercase hexadecimal characters)[:16]} 
+
+flags:
+  - COMPFEST18{8a91b563b23f57ec95e54fa68c6ccd4916d969b4ee2520760d9b6627a10995f3_cfe08231e7110514}
+
+# tags:
+#   - cryptography
+#   - very-hard
+
+value: 500
+type: dynamic
+
+decay: 20
+
+decay-function: logarithmic
+
+minimum: 100
+
+files:
+  - public/nacrevault.zip
+
+state: hidden

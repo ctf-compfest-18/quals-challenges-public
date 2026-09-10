@@ -1,0 +1,52 @@
+services:
+  launcher:
+    build:
+      context: .
+      pull: true
+    ports:
+      - "8501:8080"
+    env_file:
+      - ./src/challenge-sui/.env
+    environment:
+      MODE: ${MODE:-local}
+      LAUNCHER_PORT: "8080"
+      SUI_CLEANUP_ON_START: "true"
+      INSTANCE_TTL_SECONDS: "1800"
+      SUI_POOL_REFILL_INTERVAL: "5"
+      REAPER_INTERVAL_SECONDS: "5"
+    command: >
+      sh -c '
+        if [ "$$MODE" = "local" ]; then
+          selected_flag="$$FLAG_LOCAL";
+        elif [ "$$MODE" = "mirror" ]; then
+          selected_flag="$$FLAG_MIRROR";
+        else
+          echo "Invalid MODE: $$MODE";
+          exit 1;
+        fi;
+        if [ -z "$$selected_flag" ]; then
+          echo "Flag for MODE=$$MODE is empty";
+          exit 1;
+        fi;
+        printf "%s\n" "$$selected_flag" > /flag.txt;
+        export FLAG="$$selected_flag";
+        exec bash /entrypoint.sh
+      '
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 300s
+    restart: unless-stopped

@@ -1,0 +1,10 @@
+**
+!Dockerfile
+!.dockerignore
+!src/
+!src/challenge-eth/
+!src/challenge-eth/deploy/
+!src/challenge-eth/deploy/**
+!src/challenge-eth/compiled/
+!src/challenge-eth/compiled/Setup.sol/
+!src/challenge-eth/compiled/Setup.sol/Setup.json

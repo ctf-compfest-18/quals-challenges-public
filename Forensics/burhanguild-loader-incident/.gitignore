@@ -1,0 +1,37 @@
+# Local/editor noise
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# Python/runtime output
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Author-only material
+SOLUTION.md
+HINTS.md
+QA.md
+QA-*.md
+WRITEUP.md
+writeup/
+private/
+author/
+solver/
+solve.py
+solve_*.py
+
+# Build inputs and temporary playtest files
+*.raw
+*.bin
+.tmp*
+tmp/
+temp/
+Playtest/
+PlayTesting/
+
+# Only the packaged participant attachment belongs in public.
+public/*
+!public/attachment.zip

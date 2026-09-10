@@ -1,0 +1,9 @@
+**
+!Dockerfile
+!.dockerignore
+!src/
+!src/challenge-sui/
+!src/challenge-sui/deploy/
+!src/challenge-sui/deploy/**
+!src/challenge-sui/setup/
+!src/challenge-sui/setup/**

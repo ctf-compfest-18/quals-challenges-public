@@ -1,0 +1,5 @@
+setup/build/
+solver/target/
+__pycache__/
+*.pyc
+docker-compose.override.yml

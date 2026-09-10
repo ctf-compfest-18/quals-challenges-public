@@ -1,0 +1,7 @@
+*
+!Dockerfile
+!deploy/
+!deploy/**
+!compiled/
+!compiled/Setup.sol/
+!compiled/Setup.sol/Setup.json

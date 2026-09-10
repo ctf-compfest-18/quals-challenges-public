@@ -1,0 +1,31 @@
+services:
+  questionnaire:
+    build: .
+    environment:
+      MODE: "${MODE:-local}"
+      FLAG_LOCAL: "COMPFEST18{8urh4n9u1ld_0r10n_148_m3m0ry_0n1y_104d3r_c453_c1053d_4f73r_5upp1y_ch41n_7r4c3_826df6b2a62673a1a6cbbb1c63244dd8ddc2933381f527243d285a2b21bb4f2f}"
+      FLAG_MIRROR: "COMPFEST18{8urh4n9u1ld_0r10n_148_m3m0ry_0n1y_104d3r_c453_c1053d_4f73r_5upp1y_ch41n_7r4c3_826df6b2a62673a1a6cbbb1c63244dd8ddc2933381f52723343274716fabde}"
+      PORT: "1337"
+      MAX_CLIENTS: "16"
+      IDLE_TIMEOUT: "90"
+      MAX_INPUT: "4096"
+    command: >
+      sh -c '
+        if [ "$$MODE" = "local" ]; then
+          SELECTED_FLAG="$$FLAG_LOCAL";
+        elif [ "$$MODE" = "mirror" ]; then
+          SELECTED_FLAG="$$FLAG_MIRROR";
+        else
+          echo "Invalid MODE: $$MODE";
+          exit 1;
+        fi;
+        if [ -z "$$SELECTED_FLAG" ]; then
+          echo "Selected flag is empty for MODE=$$MODE";
+          exit 1;
+        fi;
+        export FLAG="$$SELECTED_FLAG";
+        printf "%s\n" "$$SELECTED_FLAG" > /flag.txt;
+        exec python /app/tcp_server.py
+      '
+    ports:
+      - "7010:1337"

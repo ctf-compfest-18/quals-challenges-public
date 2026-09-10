@@ -1,0 +1,12 @@
+services:
+  piyakcrypt-chall:
+    build: .
+    ports:
+      - "3000:1337"
+    container_name: hello-chall
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M

@@ -1,0 +1,14 @@
+# Local development only. Copy to docker-compose.override.yml (git-ignored);
+# `docker compose up` picks it up automatically and merges it over the base file.
+#
+# Never deploy with this in place: the bind-mount shadows the sandbox package
+# baked into the image, so on a host without this source tree the container
+# starts with a missing or stale sandbox module.
+services:
+  launcher:
+    volumes:
+      # Live-edit the sandbox package without a full image rebuild.
+      - ../images/challenge/src/sandbox:/usr/lib/python/sandbox:ro
+    environment:
+      # Skip proof-of-work so test launches are instant.
+      - DISABLE_TICKET=true

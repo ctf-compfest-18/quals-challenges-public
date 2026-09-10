@@ -1,0 +1,28 @@
+services:
+  piyakcrypt-chall:
+    build: .
+    ports:
+      - "3002:1337"
+    container_name: piyakcrypt-chall
+    restart: on-failure
+    environment:
+      MODE: ${MODE:-local}
+      FLAG_LOCAL: COMPFEST18{b1as3d_n0nc3_mt_r3c0v3ry_lll_hnp_go_brr}
+      FLAG_MIRROR: COMPFEST18{b1as3d_n0nc3_mt_r3c0v3ry_lll_hnp_go_brr_4ef08505cdf5339c}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    command: >
+      sh -c '
+        if [ "$$MODE" = "local" ]; then
+          printf "%s\n" "$$FLAG_LOCAL" > /app/flag.txt;
+        elif [ "$$MODE" = "mirror" ]; then
+          printf "%s\n" "$$FLAG_MIRROR" > /app/flag.txt;
+        else
+          echo "Invalid MODE: $$MODE";
+          exit 1;
+        fi;
+        exec socat TCP-LISTEN:1337,fork,reuseaddr "EXEC:python3 -u /app/src.py,stderr"
+      '

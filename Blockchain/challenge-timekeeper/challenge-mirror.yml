@@ -1,0 +1,33 @@
+name: "The Timekeeper's Paradox"
+author: "Aero"
+category: "Blockchain"
+
+description: |
+  Deep within the blockchain, the **Timekeeper Protocol** governs a DeFi ecosystem — a governance token, a price oracle, an upgradeable proxy, and a lending pool. The protocol's architects believed their layered architecture would keep funds safe.
+
+  The lending pool holds **50 ETH**. You've been given a small allocation of governance tokens. Can you find the paradox in time?
+
+flags:
+  - COMPFEST18{m1rr0r_t1m3k33p3r_pr1c3_0r4cl3_m4n1pul4t10n_v14_st0r4g3_sl0t_c0ll1s10n}
+
+value: 500
+type: dynamic
+decay: 20
+decay-function: logarithmic
+minimum: 100
+
+files:
+  - contracts/TimekeeperToken.sol
+  - contracts/TimekeeperOracle.sol
+  - contracts/TimekeeperProxy.sol
+  - contracts/TimekeeperLending.sol
+  - contracts/TimekeeperGovernance.sol
+  - contracts/Setup.sol
+
+state: hidden
+
+connection_info: "http://{{ IP_SERVER }}:{{ PORT }}/"
+
+expose:
+  containerPort: 8080
+  targetPort: 8503

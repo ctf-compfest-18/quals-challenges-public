@@ -1,0 +1,15 @@
+services:
+  for-savethewater:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    restart: always
+
+    ports:
+      - "7000:1603"
+
+    environment:
+      MODE: "${MODE:-local}"
+    env_file:
+      - "./deployment/${MODE:-local}.env"

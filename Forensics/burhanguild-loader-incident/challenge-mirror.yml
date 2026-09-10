@@ -1,0 +1,37 @@
+name: "BurhanGuild Loader Incident"
+author: "PolarBear7"
+category: Forensics
+
+description: |
+  An internal Linux gateway was isolated after conflicting telemetry was reported.
+  The live-response package contains volatile captures and remnants recovered from deleted storage.
+
+  Review the collection as an incident responder, determine which evidence belongs to the same event, and submit the final incident proof token to the questionnaire service.
+
+flags:
+  - COMPFEST18{8urh4n9u1ld_0r10n_148_m3m0ry_0n1y_104d3r_c453_c1053d_4f73r_5upp1y_ch41n_7r4c3_826df6b2a62673a1a6cbbb1c63244dd8ddc2933381f52723343274716fabde}
+
+# tags:
+#   - forensics
+#   - memory-forensics
+#   - file-carving
+#   - dfir
+#   - incident-response
+#   - malware-analysis
+
+attachment: public/attachment.zip
+
+value: 500
+type: dynamic
+decay: 20
+minimum: 100
+state: hidden
+
+files:
+  - public/attachment.zip
+
+expose:
+  containerPort: 1337
+  targetPort: 7010
+
+connection_info: "nc {{ IP_SERVER }} {{ PORT }}"

@@ -1,0 +1,6 @@
+dist
+src
+solve
+*.md
+*.yml
+*.yaml

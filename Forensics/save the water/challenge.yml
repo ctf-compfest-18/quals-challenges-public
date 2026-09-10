@@ -1,0 +1,49 @@
+name: "save the water"
+author: "uje"
+category: "Forensics"
+
+description: |
+    My AI agent is running slowly; it keeps loading and never finishes
+
+    WARNING: THE ATTACHMENT FOR THIS CHALLENGE CONTAINS ACTIVE AND HIGHLY DANGEROUS MALWARE!IT IS STRICTLY PROHIBITED TO EXECUTE OR RUN THE FILE OUTSIDE A SECURE ISOLATION ENVIRONMENT! THE ORGANIZERS ARE NOT RESPONSIBLE FOR ANY SYSTEM DAMAGE OR DATA LOSS CAUSED BY PARTICIPANT NEGLIGENCE!
+
+flags:
+  - COMPFEST18{b0r05_41r_vv0y_j4n64n_p3cu7_p3cu7_41_mu1u_adfhjfdhaasda}
+
+# tags:
+#   - network analysis
+
+# hints:
+#   - content: "Optional hint"
+#     cost: 0
+
+# Fixed scoring: use type: standard and omit decay/minimum.
+# Attachment-only challenges can omit connection, expose, and Docker Compose.
+value: 500
+type: dynamic
+decay: 20
+minimum: 100
+decay-function: logarithmic
+
+# Paths are relative to this file. Directories are expanded recursively.
+files:
+  - public/public.7z
+# attachment:
+state: hidden
+
+# Compose service challenge example:
+# connection: http
+# connection_info: "http://{{ IP_SERVER }}:{{ PORT }}/"
+# expose:
+#   containerPort: 7777
+#   targetPort: 1603
+
+# Per-user container challenge example (requires a root Dockerfile and no Compose):
+# type: container
+# scoring-type: dynamic
+# connection: tcp
+# alive-time: 60
+# flags:
+#   - COMPFEST18{per_team_<random_12>}
+# expose:
+#   containerPort: 7777

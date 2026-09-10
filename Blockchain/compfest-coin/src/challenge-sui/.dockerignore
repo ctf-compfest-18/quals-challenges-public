@@ -1,0 +1,12 @@
+**/__pycache__
+**/*.pyc
+**/.DS_Store
+**/build/
+**/Move.lock
+**/Published.toml
+**/Pub.*.toml
+.git
+.env
+docker-compose.yml
+docker-compose.override.yml
+docker-compose.override.yml.example

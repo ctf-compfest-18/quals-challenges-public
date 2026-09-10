@@ -1,0 +1,30 @@
+name: "Jacobian as a Service"
+author: "Karev"
+category: Miscellaneous
+
+description: |
+  Jacobian 
+
+flags:
+  - COMPFEST18{the_jacobian_conjecture_is_false_claude_<ran_16>}
+
+# tags:
+#   - wordpress
+#   - web
+
+value: 500
+type: container
+scoring-type: dynamic
+decay: 20
+decay-function: logarithmic
+minimum: 100
+
+files: "public/"
+state: hidden
+
+expose:
+  containerPort: 8080
+
+image: ghcr.io/ctf-compfest-18/jacobian:latest
+connection: tcp
+alive-time: 10

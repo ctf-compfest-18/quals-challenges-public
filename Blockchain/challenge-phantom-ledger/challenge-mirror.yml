@@ -1,0 +1,29 @@
+name: "Phantom Ledger"
+author: "Aero"
+category: "Blockchain"
+
+description: |
+  A cutting-edge DeFi vault called **PhantomVault** has been deployed to the blockchain. It supports gasless meta-transactions, allowing users to deposit ETH and authorize withdrawals through signed messages — submitted by a trusted relayer on their behalf.
+
+  The vault holds **10 ETH** belonging to the protocol. Your mission: drain it.
+
+flags:
+  - COMPFEST18{m1rr0r_ph4nt0m_l3dg3r_cr0ss_funct10n_r33ntr4ncy_w1th_ecdsa_m4ll3ab1l1ty}
+
+value: 500
+type: dynamic
+decay: 20
+decay-function: logarithmic
+minimum: 100
+
+files:
+  - contracts/PhantomVault.sol
+  - contracts/Setup.sol
+
+state: hidden
+
+connection_info: "http://{{ IP_SERVER }}:{{ PORT }}/"
+
+expose:
+  containerPort: 8080
+  targetPort: 8502

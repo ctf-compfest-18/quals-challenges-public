@@ -1,0 +1,182 @@
+config:
+  # Text that will be printed first on startup.
+  header_text: |-
+    Int*rn
+    by Karev
+
+  # Text that will be printed after all questions are answered correctly and before printing the flag.
+  win_text: "Congratulations!"
+
+  # Enable/disable answer case sensitivity. If false, "Nmap" == "nmap". (Default: true)
+  case_sensitive: true
+
+  # Enable/disable skipping questions
+  # If true, the user can answer incorrectly and the program will continue.
+  # If false, the program exits on a wrong answer.
+  can_skip: false
+
+  # Character used to split user input for 'array' type questions. (Default: ",")
+  array_delimiter: ","
+
+  # Set the numbering type of the program.
+  # If "section", the program will count based on each section. (Example: 1, 2, 3, 4, 5)
+  # If "global", the program will ignore sections and count sequentially. (Example: (Sec 1) 1, 2, 3 -> (Sec 2) 1, 2)
+  #
+  # (Default: "global")
+  numbering: "global"
+
+ui:
+  # Style of the question box. (Default: "blue")
+  panel_style: "magenta"
+
+  # Style of the header. (Default: "bold cyan")
+  header_style: "bold white"
+
+  # Style of the section box (Default: "yellow")
+  section_style: "bold yellow"
+
+  # Type of border. Types: rounded, heavy, square, double, ascii. (Default: "heavy")
+  border_type: "rounded"
+
+theme:
+  # Style used for "win_text" and question header. (Default: "cyan")
+  info: "italic cyan"
+
+  # Style used on wrong answer. (Default: "bold red")
+  error: "bold red blink"
+
+  # Style used on correct answer. (Default: "bold green")
+  success: "bold green"
+
+  # Style used for the question text. (Default: "bold white")
+  question: "bold yellow"
+
+  # Style used for the prompt. (Default: "bold yellow")
+  prompt: "bold magenta"
+
+sections:
+  - name: "Part 1: Entry Point"
+    questions:
+    - question: "Before starting your investigation, supply the BLAKE3 hash of the forensics artifacts to verify its integrity"
+      notes: "You may use https://github.com/BLAKE3-team/BLAKE3/releases/tag/1.8.5 to calculate the BLAKE3 hash"
+      answer: 
+        - "6d97129e85a6552bb07a8a83037eae7cda2022ffd4370b7dbc8a2ed59c05f696"
+        - "deff31d22f07b9f546b146d1417e758bf77e260d39b18ec8eb5d29d9dc58cb9b"
+        - "233138454a22accfea9eaaf76bda028d8787acbf16aed83fd6291eff05d3b748"
+      config:
+        type: "array"
+        format: "hash1,hash2,hash3"
+    - question: "Which program serves as the initial entry point for malware?"
+      answer: "vscode-helloworld"
+    - question: "What is the url from which the victim downloaded that program"
+      answer: "https://github.com/whiskerstein-cf/helloworld-vscode/releases/tag/0.3.0"
+    - question: "What is the timestamp when the victim downloaded that program in UTC format"
+      answer: "2026-06-27 11:02:24"
+      config:
+        format: "YYYY-MM-DD HH:mm:SS"
+    - question: "As of June 2026, how many versions of the program is available?"
+      answer: "3"
+    - question: "It seems the github repo has been taken down, however we managed to clone it before it us taken down. You could download it from https://drive.google.com/file/d/14lDbL1nf1ovRQxRlb-QgZ-2k-o3DOAUy/view?usp=sharing using the password 'compfest18'. On which version was the malicious code first introduced"
+      notes:
+      - "Moving forward all program/binary that we retrieve will use the password 'compfest18'"
+      answer: "0.2.0"
+    - question: "What is the url which the malicious code made a request to"
+      answer: "http://192.168.0.114:6767/AnyDesk.exe"
+    - question: "We've retreived a binary from that url, you can download it from https://drive.google.com/file/d/1ivm2SJhM1SYbi2TXB4RVqg7SA2yyks2V/view?usp=sharing. What is the sha256 hash of the binary."
+      answer: "28B8C8225D52EDD5B654A9B89A875B556EBFB06C8B818CA132E2FEF06A98A189"
+      config:
+        case_sensitive: false
+    - question: "Analyze the binary and recover the files in the victim's Documents folder. What is the content of notes.txt"
+      answer: "Company website: http://10.0.2.15:7070"
+  - name: "Part 2: Life of a hacker"
+    style: "red"                # Style this section differently from the previous section
+    questions:
+    - question: "What application did the hacker use to communicate with his partner"
+      answer: 
+        - "Discord"
+        - "Telegram"
+      config:
+        case_sensitive: false
+        type: "array"
+        format: "media1,media2,media3,...."
+    - question: "How many parters does the hacker have?"
+      answer: "2"
+    - question: "What is the hacker and his partner's username on Discord"
+      answer: 
+        - "whiskerstein"
+        - "dooggdogg"
+      config:
+        type: "array"
+        format: "username1,username2"
+    - question: "What is the name of the other partner"
+      answer: "goose"
+    - question: "How many malicious binary did the hacker and his partner made"
+      answer: "4"
+  - name: "Part 3: Not so simple"
+    questions:
+    - question: "After some investigation on the ransomware you found out that it is also exfiltrating the files, what is the full url where it is exfiltrated to"
+      answer: "http://192.168.0.114:5000/submit"
+    - question: "What are the credentials which could be used on the web login page"
+      answer: "hehewhiskerstein:.v4SQ4Ls&9dUi-wz"
+      config:
+        format: "username:password"
+  - name: "Part 4: More??!!"
+    questions:
+    - question: "The ransomware binary also downloaded other binaries, what is the full url where the binaries are downloaded from"
+      answer:
+        - "http://192.168.0.114:9000/WindowsDefender.exe"
+        - "http://192.168.0.114:9000/wsl.exe"
+        - "http://192.168.0.114:9000/code.exe"
+      config:
+        type: "array"
+        format: "url1,url2,url3"
+
+    - question: "We recovered all three binaries, you can find them here: https://drive.google.com/drive/folders/1PAQ80ksr_xoXZfSdU0SLOOgbYUmO2MiY?usp=sharing. What is the sha256 hash of the binaries"
+      answer:
+        - "C6A1B3235DE1EA5AE084826098FAD4D5F781B21EC3D6F959DB186DDE9B3CD87D"
+        - "481AE0E266362DF553BEFED223C1B85087DA423416D5215FB8484FBC49A33DD9"
+        - "1E33CF8FBB72A4EC463E6B7A680D0D8FF5A2F1859CDB518B4ABD052CB3F3338A"
+      config:
+        format: "hash1,hash2,hash3"
+        type: "array"
+        case_sensitive: false
+    - question: "What is the name of the first binary that would be executed"
+      answer: "code.exe"
+    - question: "What technique did that binary use to elevate its permission"
+      answer: 
+        - "UAC Bypass"
+        - "User Account Control Bypass"
+      config:
+        case_sensitive: false
+        type: "multi"
+    - question: "What is the MITRE ATT&CK id corresponding to that technique"
+      answer: "T1548.002"
+    - question: "What program did that binary use to make that technique work"
+      answer: "fodhelper.exe"
+      config:
+        format: "binary.exe"
+    - question: "What command did that binary run"
+      answer: "C:\\Users\\Public\\Music\\wsl.exe"
+  - name: "Part 5: Going deeper"
+    questions: 
+    - question: "Which binary is responsible for setting up persistance"
+      answer: "wsl.exe"
+    - question: "What built-in windows program did the binary take advantage of for persistance"
+      answer: "Recycle Bin"
+      config:
+        format: "Windows Terminal"
+        case_sensitive: false
+    - question: "What binary will the persistance run"
+      answer: "WindowsDefender.exe"
+    - question: "What technique does the malware use to execute shellcode"
+      answer: "Process Hollowing"
+      config:
+        case_sensitive: false
+    - question: "Which program's process is used for that technique, provide the full path"
+      answer: "C:\\Windows\\explorer.exe"
+    - question: "What is the blake3 hash of the shellcode's hexdigest"
+      answer: "c609f009cb0336f68b67b5c5c768d6da4542c342c20e1fa28f4a828b3308d83d"
+    - question: "What is the ip and port that the shellcode is connecting to for the reverse shell"
+      answer: "192.168.100.66:10990"
+      config: 
+        format: "ip:port"

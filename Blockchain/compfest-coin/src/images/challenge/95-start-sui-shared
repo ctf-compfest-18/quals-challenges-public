@@ -1,0 +1,67 @@
+#!/bin/bash
+# Shared-mode only: genesis + sui start before gunicorn (see 96-start-launcher).
+set -u
+
+[ "${BLOCKCHAIN_TYPE:-}" = "sui" ] || exit 0
+[ "${SUI_ISOLATION_MODE:-private_pool}" = "shared" ] || exit 0
+
+SHARED_ROOT="${SUI_SHARED_ROOT:-/tmp/sui-shared}"
+RPC_PORT="${SUI_SHARED_RPC_PORT:-9000}"
+FAUCET_PORT="${SUI_SHARED_FAUCET_PORT:-9123}"
+NETWORK_DIR="$SHARED_ROOT/network"
+LOG_DIR="$SHARED_ROOT/logs"
+
+if [ "${SUI_CLEANUP_ON_START:-true}" = "true" ]; then
+    pkill -TERM -f "sui start" 2>/dev/null || true
+    sleep 1
+    rm -rf "$SHARED_ROOT"
+fi
+mkdir -p "$NETWORK_DIR" "$LOG_DIR"
+
+echo "[sui-shared] genesis (committee=${SUI_COMMITTEE_SIZE:-1})"
+sui genesis \
+    --working-dir "$NETWORK_DIR" \
+    --with-faucet \
+    --force \
+    --committee-size "${SUI_COMMITTEE_SIZE:-1}" \
+    --epoch-duration-ms "${SUI_EPOCH_DURATION_MS:-86400000}" \
+    || { echo "[sui-shared] genesis FAILED"; exit 1; }
+
+if [ "$RPC_PORT" != "9000" ]; then
+    sed -i "s|json-rpc-address: \"0.0.0.0:9000\"|json-rpc-address: \"0.0.0.0:$RPC_PORT\"|" \
+        "$NETWORK_DIR/fullnode.yaml" 2>/dev/null || true
+    sed -i "s|rpc: \"http://127.0.0.1:9000\"|rpc: \"http://127.0.0.1:$RPC_PORT\"|" \
+        "$NETWORK_DIR/client.yaml" 2>/dev/null || true
+fi
+
+echo "[sui-shared] starting node rpc=$RPC_PORT faucet=$FAUCET_PORT"
+# Stay in entrypoint process group (tini -g); $! must be the real sui pid.
+nohup sui start \
+    --network.config "$NETWORK_DIR" \
+    "--with-faucet=0.0.0.0:$FAUCET_PORT" \
+    --fullnode-rpc-port "$RPC_PORT" \
+    >"$LOG_DIR/sui.stdout.log" 2>"$LOG_DIR/sui.stderr.log" &
+
+NODE_PID=$!
+echo "$NODE_PID" > "$SHARED_ROOT/node.pid"
+
+echo "[sui-shared] waiting for RPC"
+for _ in $(seq 1 "${SUI_SHARED_START_TIMEOUT:-180}"); do
+    if curl -fsS -X POST "http://127.0.0.1:$RPC_PORT" \
+        -H 'Content-Type: application/json' \
+        -d '{"jsonrpc":"2.0","id":1,"method":"sui_getLatestCheckpointSequenceNumber","params":[]}' \
+        >/dev/null 2>&1; then
+        echo "[sui-shared] node ready (pid $NODE_PID)"
+        exit 0
+    fi
+    if ! kill -0 "$NODE_PID" 2>/dev/null; then
+        echo "[sui-shared] node died during startup; last stderr:"
+        tail -n 40 "$LOG_DIR/sui.stderr.log" || true
+        exit 1
+    fi
+    sleep 1
+done
+
+echo "[sui-shared] node did not become ready in time; last stderr:"
+tail -n 40 "$LOG_DIR/sui.stderr.log" || true
+exit 1

@@ -1,0 +1,7 @@
+name,username,password,max_hp,attack,defense,job
+Frieren,frieren,himmel123,100,50,20,Mage
+Himmel,himmel,hero123,150,70,15,Fighter
+Heiter,heiter,corrupt123,80,30,35,Support
+Eisen,eisen,dwarf123,200,80,40,Tank
+Stark,stark,flamme123,120,90,10,Assassin
+Testnull,testnull,pass123,1,1,1,Novice

@@ -1,0 +1,26 @@
+config:
+  header_text: |-
+    BurhanGuild Loader Incident
+  win_text: "The BurhanGuild case review is accepted. Recovered case flag:"
+  case_sensitive: true
+  can_skip: false
+  array_delimiter: ","
+  numbering: "global"
+ui:
+  panel_style: "magenta"
+  header_style: "bold white"
+  section_style: "bold yellow"
+  border_type: "rounded"
+theme:
+  info: "italic cyan"
+  error: "bold red blink"
+  success: "bold green"
+  question: "bold yellow"
+  prompt: "bold magenta"
+sections:
+  - name: "BurhanGuild Loader Case Closure"
+    questions:
+      - question: "Submit the final incident proof token for this case."
+        answer: "BGLPROOF{orion-lab__cap-A812__loader-4787__implant-BG-94C2A04EC6__build-542715c2e46252e4d790__config-360251a5def08d12cb71e72d5a1609b0d34c9dfc9520197ad8b0cc2cd7cfb76b__archive-4bd20e26a2e63e75af61b07af3cf5dc219ca11a018588a3ce0ee4564338cf64a__digest-836d4fce93ec7b3077ab7c97820d29515ea5609cf346e40b76973ca37e2418ed}"
+        config:
+          format: "BGLPROOF{structured incident proof token}"

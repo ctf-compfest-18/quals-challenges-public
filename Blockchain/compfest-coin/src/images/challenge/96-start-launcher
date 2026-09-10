@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# env.py is now handled by the Python code using PersistentStore
+
+(
+    echo "starting launcher"
+    if [ "${BLOCKCHAIN_TYPE:-}" = "sui" ] && [ "${SUI_CLEANUP_ON_START:-true}" = "true" ]; then
+        # In shared mode 95-start-sui-shared has already started the one node we
+        # need, so pkill here would tear down the chain we just brought up.
+        if [ "${SUI_ISOLATION_MODE:-private_pool}" != "shared" ]; then
+            pkill -TERM -f "sui start" 2>/dev/null || true
+            rm -rf /tmp/sui-instances
+        fi
+        rm -rf /tmp/instances-by-team /tmp/instances-by-uuid
+        mkdir -p /tmp/instances-by-team /tmp/instances-by-uuid
+    fi
+    cd /home/ctf/
+    WORKERS="${GUNICORN_WORKERS:-1}"
+    # Private-pool mode spawns a node per team from inside a worker, so the
+    # worker owns those processes and there must be exactly one. Shared mode
+    # owns no processes -- the node belongs to the startup hook -- so workers
+    # scale freely, which matters because the proxy is then the bottleneck.
+    if [ "${BLOCKCHAIN_TYPE:-}" = "sui" ] \
+        && [ "${SUI_ISOLATION_MODE:-private_pool}" != "shared" ] \
+        && [ "$WORKERS" != "1" ]; then
+        echo "WARN: forcing GUNICORN_WORKERS=1 for Sui lifecycle ownership (was $WORKERS)"
+        WORKERS=1
+    fi
+    echo "Sui/gunicorn config workers=$WORKERS threads=${GUNICORN_THREADS:-8} pool=${SUI_POOL_SIZE:-0} mode=${SUI_ISOLATION_MODE:-}"
+    PYTHONUNBUFFERED=true python3 -m gunicorn \
+        --user root \
+        --group root \
+        --bind 0.0.0.0:$LAUNCHER_PORT \
+        --daemon \
+        --workers "$WORKERS" \
+        --threads ${GUNICORN_THREADS:-8} \
+        --timeout ${GUNICORN_TIMEOUT:-180} \
+        --access-logfile /var/log/ctf/proxy.access.log \
+        --error-logfile /var/log/ctf/proxy.error.log \
+        --capture-output \
+        --log-level debug \
+        chal:app
+)
+
+sleep 5

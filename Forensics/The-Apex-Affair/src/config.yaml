@@ -1,0 +1,243 @@
+config:
+  header_text: |-
+    The Apex Affair
+    by jay
+
+    ⚠️ IMPORTANT
+    - Unless otherwise stated, all timestamps must be submitted in UTC.
+    - All timestamps are truncated down to the nearest whole second.
+      Example: 16:42:36.737 -> 16:42:36
+    - Follow the answer format shown for each question exactly.
+
+    https://github.com/kawijayaa/questionnaire
+
+  win_text: "Congratulations, you have successfully reconstructed the incident and recovered the victim's data!"
+
+  case_sensitive: false
+  can_skip: false
+  continue_on_incorrect: false
+
+  array_delimiter: ","
+  numbering: "section"
+
+  max_answer_length: 4096
+  regex_timeout_ms: 100
+
+  normalization:
+    trim_whitespace: true
+    collapse_whitespace: true
+    ignore_punctuation: false
+    numeric_comparison: false
+    array_duplicates: "preserve"
+
+
+ui:
+  panel_style: "magenta"
+  header_style: "bold white"
+  section_style: "bold yellow"
+  border_type: "rounded"
+
+
+theme:
+  info: "italic cyan"
+  error: "bold red"
+  success: "bold green"
+  question: "bold yellow"
+  prompt: "bold magenta"
+
+
+sections:
+
+  - name: "PART 1 — Initial Access"
+    style: "bold cyan"
+    questions:
+
+      - question: "Through which application did the victim receive the phishing message that initiated the compromise?"
+        answer:
+          - "outlook"
+          - "microsoft outlook"
+        config:
+          type: "multi"
+          case_sensitive: false
+          format: "Application name (e.g., Slack, Discord)"
+
+      - question: "At what timestamp was the first phishing email received by the victim?"
+        answer: "2026-08-15 08:45:38"
+        config:
+          case_sensitive: false
+          format: "YYYY-MM-DD HH:MM:SS"
+
+      - question: "What was the subject of the follow-up email that delivered the malicious installer?"
+        answer: "Update Your Browser - Download the Latest Google Chrome"
+        config:
+          case_sensitive: false
+          format: "Email subject"
+
+      - question: "At what UTC timestamp did the victim execute the malicious MSI installer?"
+        answer: "2026-08-15 16:42:36"
+        config:
+          case_sensitive: false
+          format: "YYYY-MM-DD HH:MM:SS"
+
+
+  - name: "PART 2 — Execution and Persistence"
+    style: "bold cyan"
+    questions:
+
+      - question: "What embedded binary is referenced by the malicious custom action?"
+        answer: "GoogleChromeUpdater"
+        config:
+          case_sensitive: false
+          format: "Binary name"
+
+      - question: "What full command line does the DLL use to execute the dropped payload in a new process?"
+        answer: 'rundll32.exe "C:\Users\Public\chrome_update.dll",Drop'
+        config:
+          case_sensitive: false
+          format: 'executable.exe "C:\Path\filename",Export'
+          subtext: "Submit the complete command line."
+
+      - question: "How many additional executable binaries are deployed by the malicious DLL, and what are their full paths?"
+        answer:
+          - '2|C:\Program Files\Google\Chrome\GoogleUpdater.exe|C:\Program Files\Google\Chrome\software_reporter_tool.exe'
+          - '2|C:\Program Files\Google\Chrome\software_reporter_tool.exe|C:\Program Files\Google\Chrome\GoogleUpdater.exe'
+        config:
+          type: "multi"
+          case_sensitive: false
+          format: "n|fullpath1|fullpath2_..._fullpathN"
+          subtext: "The order of the executable paths does not matter."
+
+      - question: "What are the exact command lines executed by the first deployed binary to modify Microsoft Defender settings?"
+        answer: '"C:\Program Files\Google\Chrome\GoogleUpdater.exe" "add-exclusion" "Paths" "C:\Program Files\Google\Chrome"|"C:\Program Files\Google\Chrome\GoogleUpdater.exe" "secengine" "disable"|"C:\Program Files\Google\Chrome\GoogleUpdater.exe" "tp" "off"|"C:\Program Files\Google\Chrome\GoogleUpdater.exe" "rtp" "off"'
+        config:
+          case_sensitive: false
+          format: "action1|action2|...|actionN"
+          subtext: "Submit the four complete command lines in execution order, separated by |."
+
+      - question: "At what UTC timestamp was the malicious Chrome directory added to Microsoft Defender exclusions?"
+        answer: "2026-08-15 16:48:38"
+        config:
+          case_sensitive: false
+          format: "YYYY-MM-DD HH:MM:SS"
+
+      - question: "What registry value was configured to redirect the Windows Security tray component launch?"
+        answer: "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\SecurityHealthSystray.exe\\Debugger=systray.exe"
+        config:
+          case_sensitive: false
+          format: "registry_path=value"
+
+      - question: "Which MITRE ATT&CK technique corresponds to the persistence mechanism used by the RAT?"
+        answer: "T1547.001"
+        config:
+          case_sensitive: false
+          format: "TXXXX.XXX"
+
+      - question: "At what UTC timestamp was persistence for the malicious RAT established?"
+        answer: "2026-08-15 16:49:32"
+        config:
+          case_sensitive: false
+          format: "YYYY-MM-DD HH:MM:SS"
+
+
+  - name: "PART 3 — Command and Control"
+    style: "bold cyan"
+    questions:
+
+      - question: "Which legitimate service is abused by the RAT for C2 communication?"
+        answer: "Google Calendar"
+        config:
+          case_sensitive: false
+          format: "Service name"
+
+      - question: "What Google Calendar ID is used by the RAT for C2 communication?"
+        answer: "18a7bdbf39f6baa148901225fa21b72cfe492720379a04f2068e1d364db65457@group.calendar.google.com"
+        config:
+          case_sensitive: false
+          format: "Calendar ID"
+
+      - question: "Which two Google Calendar event fields are used to identify the targeted victim and to store the command and execution result?"
+        answer: "Summary_description"
+        config:
+          case_sensitive: false
+          format: "field1_field2"
+
+      - question: "What was the first attacker-issued reconnaissance command executed through the RAT?"
+        answer: "systeminfo"
+        config:
+          case_sensitive: false
+          format: "command"
+
+      - question: "At what UTC timestamp was the final command executed through the RAT before the current user session ended?"
+        answer: "2026-08-15 17:11:14"
+        config:
+          case_sensitive: false
+          format: "YYYY-MM-DD HH:MM:SS"
+
+      - question: "After the RAT resumed communication on the following day, what command did the attacker use to enumerate running processes on the compromised host?"
+        answer: 'for /f "tokens=1" %%i in (''tasklist /nh'') do @echo %%i'
+        config:
+          case_sensitive: false
+          format: "command"
+          subtext: "Submit the complete command exactly as observed."
+
+      - question: "What encryption key was recovered from Zoom's DPAPI-protected win_osencrypt_key value?"
+        answer: "KEqrg7kVO1xP2BqJG9fZUpMyWblZFQWuClvZb0EYIzw="
+        config:
+          case_sensitive: true
+          format: "Base64-encoded key"
+
+      - question: "What display name was stored in the victim's encrypted Zoom account profile?"
+        answer:
+          - "Edward Collins"
+          - "Edward Collins10"
+        config:
+          type: "multi"
+          case_sensitive: false
+          format: "Display name"
+
+
+  - name: "PART 4 — Payload Execution"
+    style: "bold cyan"
+    questions:
+
+      - question: "Which process was targeted by the suspicious remote thread creation, and at what virtual address did the thread begin execution?"
+        answer: "Notepad.exe;0x00000151C1E20000"
+        config:
+          case_sensitive: false
+          format: "process;address"
+
+      - question: "What is the SHA-256 hash of the shellcode injected into the targeted process?"
+        answer: "9e2413e4d0469a25c7840872f5fa98d93c4bb1c2f9a0d184f47eadaf808fefcf"
+        config:
+          case_sensitive: false
+          format: "64 hexadecimal characters"
+
+
+  - name: "PART 5 — Impact and Recovery"
+    style: "bold cyan"
+    questions:
+
+      - question: "What smart contract address does the ransomware query to retrieve its victim-specific configuration?"
+        answer: "0x08FE9fc8288Cf5D5EE5f4F69c0e4f774FFA275d4"
+        config:
+          case_sensitive: false
+          format: "Address starting with 0x"
+
+      - question: "What function selector is used by the ransomware when querying the smart contract?"
+        answer: "0x8fe24bdb"
+        config:
+          case_sensitive: false
+          format: "0xXXXXXXXX"
+
+      - question: "What encrypted seed, salt, and KDF round count were returned by the smart contract for the compromised victim?"
+        answer: "a545e0a8c675ce955431882c239e555e2de01b6bf63cd0c84514627cc306481f;7a89a98c355a84e98a3f4ef3045871d4;4096"
+        config:
+          case_sensitive: false
+          format: "encryptedSeed;salt;kdfRounds"
+          subtext: "Submit all three values in the specified order."
+
+      - question: "What is the SHA-256 hash of the recovered original document?"
+        answer: "d33cc7764e98bcdef507065dc96d4b2e5fd2af0ec95d60e9b4e115fa75b2ea5e"
+        config:
+          case_sensitive: false
+          format: "64 hexadecimal characters"

@@ -1,0 +1,31 @@
+name: "Compfest Coin"
+author: "XymboL"
+category: "Blockchain"
+
+description: |
+  ALL IN SEMESTA BOSKU, CACING-CACING NAGA-NAGA.
+
+  Starter tooling:
+  - https://docs.sui.io/guides/developer/getting-started
+  - [@mysten/sui](https://www.npmjs.com/package/@mysten/sui) TypeScript SDK
+  - Sui CLI cannot be used because of gRPC
+
+flags:
+  - COMPFEST18{Allow_me_to_say_goodbye_to_the_Crypto_World_Today_might_be_the_heaviest_day_for_me_My_hands_are_trembling_as_I_write_this_my_chest_feels_tight_and_my_head_is_full_of_thoughts_The_crypto_world_really_knows_no_mercy_I_have_fought_this_far_hoping_there_would_be_light_at_the_end_of_that_red_chart_But_the_reality_is_Crypto_is_sadistic_and_cruel_Sometimes_it_drains_not_only_your_balance_but_also_your_heart_and_spirit_For_friends_who_have_not_entered_yet_listen_carefully_Do_not_be_reckless_This_world_is_not_a_place_to_just_try_things_Learn_first_understand_the_risks_and_never_put_in_more_than_you_can_afford_to_lose_I_apologize_if_any_of_my_words_have_offended_anyone_here_There_was_never_any_bad_intention_only_the_emotions_of_someone_who_has_endured_the_storm_for_too_long_And_now_I_give_up_I_want_to_rest_Those_of_you_who_are_still_strong_continue_your_struggle_But_for_those_who_also_feel_broken_maybe_it_is_time_for_us_to_CL_together_Alt_season_is_really_over_Thank_you_for_all_the_stories_laughter_and_pain_we_have_shared_here_See_you_in_the_next_life_not_as_a_trader_but_as_a_human_who_has_learned}
+
+value: 500
+type: dynamic
+decay: 20
+decay-function: logarithmic
+minimum: 100
+
+files:
+  - public
+
+state: hidden
+
+connection_info: "http://{{ IP_SERVER }}:{{ PORT }}/"
+
+expose:
+  containerPort: 8080
+  targetPort: 8501

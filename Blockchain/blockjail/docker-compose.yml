@@ -1,0 +1,42 @@
+services:
+  launcher:
+    build:
+      context: .
+    ports:
+      - "8500:8080"
+    env_file:
+      - ./src/challenge-eth/.env
+    environment:
+      MODE: ${MODE:-local}
+      LAUNCHER_PORT: "8080"
+      ANVIL_EXTRA_OPTIONS: ${ANVIL_EXTRA_OPTIONS:-}
+    command: >
+      sh -c '
+        if [ "$$MODE" = "local" ]; then
+          selected_flag="$$FLAG_LOCAL";
+        elif [ "$$MODE" = "mirror" ]; then
+          selected_flag="$$FLAG_MIRROR";
+        else
+          echo "Invalid MODE: $$MODE";
+          exit 1;
+        fi;
+        if [ -z "$$selected_flag" ]; then
+          echo "Flag for MODE=$$MODE is empty";
+          exit 1;
+        fi;
+        printf "%s\n" "$$selected_flag" > /flag.txt;
+        export FLAG="$$selected_flag";
+        exec bash /entrypoint.sh
+      '
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    restart: unless-stopped

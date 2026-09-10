@@ -1,0 +1,26 @@
+name: "BlockJail"
+author: "XxymbolL"
+category: "Blockchain"
+
+description: |
+  Lets infiltrate the palace again!
+
+flags:
+  - COMPFEST18{I_guess_bro_here_is_relatively_secure_mirror_flag_you_have_searched_for_1000dfce}
+
+value: 500
+type: dynamic
+decay: 20
+decay-function: logarithmic
+minimum: 100
+
+files:
+  - public
+
+state: hidden
+
+connection_info: "http://{{ IP_SERVER }}:{{ PORT }}/"
+
+expose:
+  containerPort: 8080
+  targetPort: 8500

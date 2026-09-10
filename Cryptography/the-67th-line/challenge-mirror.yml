@@ -1,0 +1,34 @@
+name: The 67th Line
+author: racoonhunter
+
+category: Cryptography
+
+description: |
+  Old notes, short lines, and one sealed gate.
+
+  Start from:
+  @kuliah67.archive
+
+  Flag format:
+  COMPFEST18{64 lowercase hexadecimal characters + `_` + sha256(that 64 lowercase hexadecimal characters)[:16]}
+
+flags:
+  - COMPFEST18{5e9e8bf77207eca9c6906e80a57aa0e426f18ab8825a7b0f656cfa5d888a81c9_aefbd0dc566889bb}
+
+# tags:
+# - osint
+# - cryptography
+# - very-hard
+ 
+value: 500
+type: dynamic
+
+decay: 20
+
+decay-function: logarithmic
+
+minimum: 100
+
+files: []
+
+state: hidden

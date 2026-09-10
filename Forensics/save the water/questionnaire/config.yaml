@@ -1,0 +1,81 @@
+config:
+  header_text: |-
+    save the water
+    by uje
+  win_text: "Congratulation"
+  case_sensitive: false
+  can_skip: false
+  array_delimiter: ","
+  numbering: "global"
+
+ui:
+  panel_style: "cyan"
+  header_style: "bold white"
+  section_style: "bold yellow"
+  border_type: "rounded"
+
+theme:
+  info: "italic cyan"
+  error: "bold red"
+  success: "bold green"
+  question: "bold white"
+  prompt: "bold cyan"
+
+sections:
+  - name: "save the water"
+    questions:
+      - question: "What is the IP Address of the victim?"
+        answer: "192.168.100.10"
+        config:
+          format: "IPAddress"
+      
+      - question: "What is the complete versioning artifact exposed by the initiator during the very first phase of the session?"
+        answer: "5.1.26100.8521"
+        config:
+          format: "X.X.XXXXX.XXXX"
+      
+      - question: "What are the first 4 bytes (magic bytes) in hexadecimal format sent to authenticate the connection?"
+        answer: "de-ad-be-ef"
+        config:
+          format: "xx-xx-xx-xx"
+      
+      - question: "What is the 32-bit synchronization source identifier tracking the heavy multimedia datagram stream?"
+        answer: "2196231738"
+        config:
+          format: "decimal digits"
+      
+      - question: "The attacker hid a secret string without inserting it into the data payload. What is the secret string?"
+        answer: "d0nt_ruN_th3_m4lw4r3_y4hh_82117caa"
+        config:
+          format: "34 character string"
+      
+      - question: "That was a password snippet for private.676767. Append '512de1cc679e2acb37092e10a6111c22' to the end of that string. what is the MD5 checksum of the reconstructed massive payload fragmented across thet traffic?"
+        answer: " c61e123e24a6025bc1aac86391385070"
+        config:
+          format: "MD5"
+      
+      - question: "What is the string of the AES Key left in the memory?"
+        answer: "bd7bf788d62bdec9c219316da4487314_y0u_g0t_tr4pp3d!"
+        config:
+          format: "AES Key_IV"
+      
+      - question: "What is the multi-digit authorization code revealed on the evidence?"
+        answer: "16031115"
+        config:
+          format: "decimal digit"
+
+      - question: "What is the SHA256 hash value of the malware?"
+        answer: "be69c8c00b73aadbb26ca44707ec1d489f891d2e848dd7e834b8f881bcdeb33d"
+        config:
+          format: "SHA256"
+
+      - question: "What are the hexadecimal values of the starting point (Offset) and the data block length (Size) required?"
+        answer: "00009600_046ecd9d"
+        config:
+          format: "Offset_Size"
+
+      - question: "What is the name of the original developer of the privilege escalation utility program smuggled inside this malware archive?"
+        answer: "Johannes_Passing"
+        config:
+          format: "FirstName_LastName"
+      

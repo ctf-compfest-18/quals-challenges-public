@@ -1,0 +1,421 @@
+name: deploy-challenge
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  detect_changes:
+    runs-on: ubuntu-latest
+    outputs:
+      challenges: ${{ steps.detect.outputs.challenges }}
+      mirror_challenges: ${{ steps.detect.outputs.mirror_challenges }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed challenges
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          before_sha="${{ github.event.before }}"
+          if [[ "$before_sha" =~ ^0+$ ]]; then
+            mapfile -t changed_files < <(git ls-files)
+          else
+            mapfile -t changed_files < <(git diff --name-only "$before_sha" "${{ github.sha }}")
+          fi
+
+          declare -A challenges=()
+          declare -A mirror_challenges=()
+          for path in "${changed_files[@]}"; do
+            [ -z "$path" ] && continue
+            search_dir="$(dirname "$path")"
+            while [ "$search_dir" != "." ] && [ "$search_dir" != "/" ]; do
+              if [ -f "${search_dir}/challenge.yml" ] || [ -f "${search_dir}/challenge-mirror.yml" ]; then
+                mirror_challenges["$search_dir"]=1
+                if [ -f "${search_dir}/challenge.yml" ]; then
+                  challenges["$search_dir"]=1
+                fi
+                break
+              fi
+              search_dir="$(dirname "$search_dir")"
+            done
+          done
+
+          if [ "${#challenges[@]}" -eq 0 ] && [ "${#mirror_challenges[@]}" -eq 0 ]; then
+            echo "challenges=[]" >> "$GITHUB_OUTPUT"
+            echo "mirror_challenges=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          json="$(python - "${!challenges[@]}" -- "${!mirror_challenges[@]}" <<'PY'
+          import json
+          import sys
+          separator = sys.argv.index("--")
+          print(json.dumps(sorted(sys.argv[1:separator])))
+          print(json.dumps(sorted(sys.argv[separator + 1:])))
+          PY
+          )"
+          mapfile -t challenge_json <<< "$json"
+          echo "challenges=${challenge_json[0]:-[]}" >> "$GITHUB_OUTPUT"
+          echo "mirror_challenges=${challenge_json[1]:-[]}" >> "$GITHUB_OUTPUT"
+
+  process_challenge:
+    needs: detect_changes
+    if: ${{ needs.detect_changes.outputs.challenges != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        challenge: ${{ fromJson(needs.detect_changes.outputs.challenges) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Classify and validate challenge
+        id: classify
+        shell: bash
+        run: |
+          set -euo pipefail
+          challenge_dir="${{ matrix.challenge }}"
+          challenge_yml="${challenge_dir}/challenge.yml"
+
+          find_compose_file() {
+            local dir="$1"
+            for candidate in docker-compose.yml docker-compose.yaml compose.yml compose.yaml; do
+              if [ -f "$dir/$candidate" ]; then
+                echo "$candidate"
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          challenge_type="$(python - "$challenge_yml" <<'PY'
+          import sys
+          import yaml
+          from pathlib import Path
+          data = yaml.safe_load(Path(sys.argv[1]).read_text(encoding="utf-8")) or {}
+          ctype = data.get("type")
+          print("standard" if ctype in (None, "", "static") else str(ctype))
+          PY
+          )"
+
+          has_dockerfile=false
+          if [ -f "${challenge_dir}/Dockerfile" ]; then
+            has_dockerfile=true
+          fi
+
+          compose_file=""
+          has_compose=false
+          if compose_file="$(find_compose_file "$challenge_dir")"; then
+            has_compose=true
+          fi
+
+          mode="none"
+          valid=true
+          reason="valid"
+          ghcr_image=""
+
+          if [ "$challenge_type" = "container" ]; then
+            mode="container"
+            if [ "$has_dockerfile" != "true" ] || [ "$has_compose" = "true" ]; then
+              valid=false
+              reason="container challenge must have Dockerfile and must not have docker compose"
+            else
+              owner_lc="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+              repo_lc="$(echo "${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]')"
+              challenge_slug="$(echo "$challenge_dir" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+              ghcr_image="ghcr.io/${owner_lc}/${repo_lc}-${challenge_slug}:latest"
+              reason="container challenge validated"
+            fi
+          else
+            if [ "$has_dockerfile" = "true" ] && [ "$has_compose" = "true" ]; then
+              mode="static"
+              reason="non-container challenge has dockerfile+compose"
+            else
+              mode="none"
+              reason="non-container challenge without full docker setup; image deployment skipped"
+            fi
+          fi
+
+          echo "type=${challenge_type}" >> "$GITHUB_OUTPUT"
+          echo "mode=${mode}" >> "$GITHUB_OUTPUT"
+          echo "valid=${valid}" >> "$GITHUB_OUTPUT"
+          echo "reason=${reason}" >> "$GITHUB_OUTPUT"
+          echo "compose_file=${compose_file}" >> "$GITHUB_OUTPUT"
+          echo "ghcr_image=${ghcr_image}" >> "$GITHUB_OUTPUT"
+
+          if [ "$valid" = "true" ]; then
+            echo "::notice title=${challenge_dir}::VALID - ${reason}"
+          else
+            echo "::error title=${challenge_dir}::INVALID - ${reason}"
+          fi
+
+      - name: Copy static challenge to STATIC_CHALLENGE_VM
+        if: ${{ steps.classify.outputs.valid == 'true' && steps.classify.outputs.mode == 'static' }}
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.STATIC_CHALLENGE_VM_IP }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          debug: true
+          source: ${{ matrix.challenge }}/
+          target: /home/${{ secrets.VM_USER }}/static_challenges/
+
+      - name: Start static challenge on STATIC_CHALLENGE_VM
+        if: ${{ steps.classify.outputs.valid == 'true' && steps.classify.outputs.mode == 'static' }}
+        uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17
+        with:
+          host: ${{ secrets.STATIC_CHALLENGE_VM_IP }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            CHALLENGE_DIR="/home/${{ secrets.VM_USER }}/static_challenges/${{ matrix.challenge }}"
+            cd "$CHALLENGE_DIR"
+            docker compose -f "${{ steps.classify.outputs.compose_file }}" up --build -d
+            docker ps -a
+            test "$(docker compose -f "${{ steps.classify.outputs.compose_file }}" ps --status running --services | wc -l)" -gt 0
+
+      - name: Log in to GHCR
+        if: ${{ steps.classify.outputs.valid == 'true' && steps.classify.outputs.mode == 'container' }}
+        uses: docker/login-action@v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push container challenge image
+        if: ${{ steps.classify.outputs.valid == 'true' && steps.classify.outputs.mode == 'container' }}
+        uses: docker/build-push-action@c382f710d39a5bb4e430307530a720f50c2d3318
+        with:
+          context: ${{ matrix.challenge }}
+          push: true
+          tags: ${{ steps.classify.outputs.ghcr_image }}
+
+      - name: Pull container challenge image on CONTAINER_CHALLENGE_VM
+        if: ${{ steps.classify.outputs.valid == 'true' && steps.classify.outputs.mode == 'container' }}
+        uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17
+        env:
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.CONTAINER_CHALLENGE_VM_IP }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: GHCR_USERNAME,GHCR_TOKEN
+          script_stop: true
+          script: |
+            set -euo pipefail
+            echo "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USERNAME" --password-stdin
+            docker pull "${{ steps.classify.outputs.ghcr_image }}"
+            docker logout ghcr.io
+
+      - name: Deploy challenge to CTFd
+        if: ${{ steps.classify.outputs.valid == 'true' }}
+        env:
+          CTFD_URL: ${{ secrets.CTFD_URL }}
+          CTFD_TOKEN: ${{ secrets.CTFD_TOKEN }}
+          CTFD_IMAGE: ${{ steps.classify.outputs.ghcr_image }}
+          IP_SERVER: ${{ secrets.STATIC_CHALLENGE_VM_IP }}
+        run: |
+          python scripts/deploy.py "${{ matrix.challenge }}" --environment local --insecure
+
+      - name: Challenge status summary
+        if: always()
+        shell: bash
+        run: |
+          challenge="${{ matrix.challenge }}"
+          if [ "${{ steps.classify.outputs.valid }}" != "true" ]; then
+            status="INVALID"
+            detail="${{ steps.classify.outputs.reason }}"
+          elif [ "${{ job.status }}" = "success" ]; then
+            status="VALID"
+            detail="image workflow passed; deployed to CTFd"
+          else
+            status="INVALID"
+            detail="image workflow failed before CTFd deployment"
+          fi
+          {
+            echo "### ${challenge}"
+            echo ""
+            echo "- Status: ${status}"
+            echo "- Mode: ${{ steps.classify.outputs.mode }}"
+            echo "- Detail: ${detail}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy_ctfd_mirror:
+    needs: [detect_changes, process_challenge]
+    if: ${{ always() && needs.detect_changes.outputs.mirror_challenges != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        challenge: ${{ fromJson(needs.detect_changes.outputs.mirror_challenges) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Classify mirror challenge
+        id: classify
+        shell: bash
+        run: |
+          set -euo pipefail
+          challenge_dir="${{ matrix.challenge }}"
+          config="${challenge_dir}/challenge-mirror.yml"
+          if [ ! -f "$config" ]; then config="${challenge_dir}/challenge.yml"; fi
+          [ -f "${challenge_dir}/challenge-mirror.yml" ] && has_mirror=true || has_mirror=false
+          [ -f "${challenge_dir}/challenge.yml" ] && has_local=true || has_local=false
+          challenge_type="$(python - "$config" <<'PY'
+          import sys, yaml
+          from pathlib import Path
+          data = yaml.safe_load(Path(sys.argv[1]).read_text(encoding="utf-8")) or {}
+          ctype = data.get("type")
+          print("standard" if ctype in (None, "", "static") else str(ctype))
+          PY
+          )"
+          [ -f "${challenge_dir}/Dockerfile" ] && has_docker=true || has_docker=false
+          compose=""
+          for candidate in docker-compose.yml docker-compose.yaml compose.yml compose.yaml; do
+            if [ -f "${challenge_dir}/${candidate}" ]; then compose="$candidate"; break; fi
+          done
+          mode=attachment
+          [ "$challenge_type" = container ] && mode=dynamic
+          [ -n "$compose" ] && [ "$has_docker" = true ] && [ "$challenge_type" != container ] && mode=static
+          owner_lc="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          repo_lc="$(echo "${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]')"
+          slug="$(echo "$challenge_dir" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "compose=$compose" >> "$GITHUB_OUTPUT"
+          echo "has_mirror=$has_mirror" >> "$GITHUB_OUTPUT"
+          echo "has_local=$has_local" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${owner_lc}/${repo_lc}-${slug}:latest" >> "$GITHUB_OUTPUT"
+
+      - name: Diagnose mirror static VM before copy
+        if: ${{ steps.classify.outputs.mode == 'static' }}
+        uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17
+        with:
+          host: ${{ secrets.MIRROR_STATIC_CHALLENGE_VM_IP }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          debug: true
+          script_stop: true
+          script: |
+            set -eux
+            echo "user=$(id -un)"
+            echo "host=$(hostname)"
+            mkdir -p "/home/${{ secrets.VM_USER }}/static_challenges"
+            ls -ld "/home/${{ secrets.VM_USER }}" "/home/${{ secrets.VM_USER }}/static_challenges"
+            test -w "/home/${{ secrets.VM_USER }}/static_challenges"
+            df -h "/home/${{ secrets.VM_USER }}"
+            docker version
+            docker compose version
+
+      - name: Copy static challenge to mirror VM
+        if: ${{ steps.classify.outputs.mode == 'static' }}
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.MIRROR_STATIC_CHALLENGE_VM_IP }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          debug: true
+          source: ${{ matrix.challenge }}/
+          target: /home/${{ secrets.VM_USER }}/static_challenges/
+
+      - name: Start static challenge on mirror VM
+        if: ${{ steps.classify.outputs.mode == 'static' }}
+        uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17
+        with:
+          host: ${{ secrets.MIRROR_STATIC_CHALLENGE_VM_IP }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          script: |
+            set -eu
+            cd "/home/${{ secrets.VM_USER }}/static_challenges/${{ matrix.challenge }}"
+            if [ "${{ steps.classify.outputs.has_mirror }}" = true ] && [ "${{ steps.classify.outputs.has_local }}" = true ]; then
+              if ! compose_output="$(MODE=mirror docker compose -f "${{ steps.classify.outputs.compose }}" up --build -d 2>&1)"; then
+                printf '%s\n' "$compose_output"
+                docker compose -f "${{ steps.classify.outputs.compose }}" config 2>&1 || true
+                docker compose -f "${{ steps.classify.outputs.compose }}" ps -a 2>&1 || true
+                docker ps -a 2>&1 || true
+                exit 1
+              fi
+            else
+              if ! compose_output="$(docker compose -f "${{ steps.classify.outputs.compose }}" up --build -d 2>&1)"; then
+                printf '%s\n' "$compose_output"
+                docker compose -f "${{ steps.classify.outputs.compose }}" config 2>&1 || true
+                docker compose -f "${{ steps.classify.outputs.compose }}" ps -a 2>&1 || true
+                docker ps -a 2>&1 || true
+                exit 1
+              fi
+            fi
+            printf '%s\n' "$compose_output"
+            test "$(docker compose -f "${{ steps.classify.outputs.compose }}" ps --status running --services | wc -l)" -gt 0
+
+      - name: Log in to GHCR for mirror-only dynamic image
+        if: ${{ steps.classify.outputs.mode == 'dynamic' && steps.classify.outputs.has_local == 'false' }}
+        uses: docker/login-action@v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build mirror-only dynamic image
+        if: ${{ steps.classify.outputs.mode == 'dynamic' && steps.classify.outputs.has_local == 'false' }}
+        uses: docker/build-push-action@c382f710d39a5bb4e430307530a720f50c2d3318
+        with:
+          context: ${{ matrix.challenge }}
+          push: true
+          tags: ${{ steps.classify.outputs.image }}
+
+      - name: Pull dynamic image on mirror VM
+        if: ${{ steps.classify.outputs.mode == 'dynamic' }}
+        uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17
+        env:
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.MIRROR_CONTAINER_CHALLENGE_VM_IP }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: GHCR_USERNAME,GHCR_TOKEN
+          script_stop: true
+          script: |
+            set -euo pipefail
+            echo "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USERNAME" --password-stdin
+            docker pull "${{ steps.classify.outputs.image }}"
+            docker logout ghcr.io
+
+      - name: Deploy mirror challenge config to CTFd
+        env:
+          CTFD_URL: ${{ secrets.MIRROR_CTFD_URL }}
+          CTFD_TOKEN: ${{ secrets.MIRROR_CTFD_TOKEN }}
+          CTFD_IMAGE: ${{ steps.classify.outputs.image }}
+          IP_SERVER: ${{ secrets.MIRROR_STATIC_CHALLENGE_VM_IP }}
+        run: python scripts/deploy.py "${{ matrix.challenge }}" --environment mirror --insecure
